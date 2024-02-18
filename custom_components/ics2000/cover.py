@@ -62,9 +62,7 @@ def setup_platform(
 
     # Add devices
     add_entities(KlikAanKlikUitDevice(
-        device=device,
-        tries=1,
-        sleep=1
+        device=device
     ) for device in hub.devices if Sunshade == type(device))
 
 
