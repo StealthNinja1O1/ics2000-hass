@@ -13,7 +13,7 @@ from enum import Enum
 
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.cover.CoverEntity import CoverEntity, PLATFORM_SCHEMA
+from homeassistant.components.cover import CoverEntity, PLATFORM_SCHEMA
 from homeassistant.const import CONF_PASSWORD, CONF_MAC, CONF_EMAIL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
