@@ -61,14 +61,12 @@ def setup_platform(
         return
 
     # Add devices
-    for device in hub.devices:
-        if Sunshade == type(device):
-            _LOGGER.info(f'Adding device {device.name}')
-            add_entities(KlikAanKlikUitDevice(
-                device=device
-            ))
-        else:
-            _LOGGER.info(f'Not adding device {device.name} as it is not a sunshade')
+    add_entities(KlikAanKlikUitDevice(
+        device=device,
+        tries=1,
+        sleep=1
+    ) for device in hub.devices if Sunshade == type(device))
+
 
 
 class KlikAanKlikUitAction(Enum):
