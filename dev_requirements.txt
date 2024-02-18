@@ -2,6 +2,6 @@
 # also been pinned to older versions
 homeassistant==2021.6.6
 voluptuous==0.12.1
-git+https://github.com/rdegraafwhizzkit/ics2000-python@master#egg=ics2000
+git+https://github.com/StealthNinja1O1/ics2000-python@master#egg=ics2000
 pip==20.2.4
 pipdeptree==2.3.3

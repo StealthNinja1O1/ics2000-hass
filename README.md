@@ -4,7 +4,7 @@ This integration shows how you can use an ICS-2000 in Home Assistant.
 
 ### Installation
 * Install HACS in Home Assistant using instructions found at https://hacs.xyz/docs/setup/download/
-* Add a custom _integration_ repository in HACS with url https://github.com/rdegraafwhizzkit/ics2000-hass
+* Add a custom _integration_ repository in HACS with url https://github.com/StealthNinja1O1/ics2000-hass
 * Select this custom repository in HACS and click 'DOWNLOAD'
 * Add the File editor add on in Home Assistant. Using File editor, add the following entry in your `<config_dir>/configuration.yaml`:
 
