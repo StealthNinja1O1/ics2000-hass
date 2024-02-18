@@ -98,6 +98,8 @@ class KlikAanKlikUitThread(threading.Thread):
 
 class KlikAanKlikUitDevice(CoverEntity):
     """Representation of a KlikAanKlikUit device"""
+    __attr_is_closed = None
+    _attr_is_closed = None
 
     def __init__(self, device: Sunshade) -> None:
         """Initialize a KlikAanKlikUitDevice"""
