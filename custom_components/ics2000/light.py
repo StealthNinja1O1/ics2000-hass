@@ -9,12 +9,12 @@ import voluptuous as vol
 
 from typing import Any
 from ics2000.Core import Hub
-from ics2000.Devices import Device, Dimmer
+from ics2000.Devices import Device, Dimmer, Zigbee_Lamp, Sunshade
 from enum import Enum
 
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.light import ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, PLATFORM_SCHEMA, LightEntity
+from homeassistant.components.light import ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, SUPPORT_COLOR_TEMP, PLATFORM_SCHEMA, LightEntity
 from homeassistant.const import CONF_PASSWORD, CONF_MAC, CONF_EMAIL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -68,13 +68,18 @@ def setup_platform(
         device=device,
         tries=int(config.get('tries', 3)),
         sleep=int(config.get('sleep', 3))
-    ) for device in hub.devices)
+    ) for device in hub.devices if Sunshade != type(device) and Zigbee_Lamp != type(device))
+
+    add_entities(KlikAanKlikUitZigbeeDevice(
+        device=device
+    ) for device in hub.devices if Zigbee_Lamp == type(device))
 
 
 class KlikAanKlikUitAction(Enum):
     TURN_ON = 'on'
     TURN_OFF = 'off'
     DIM = 'dim'
+    CHANGE_TEMEPRATURE = 'change_temperature'
 
 
 class KlikAanKlikUitThread(threading.Thread):
@@ -113,7 +118,7 @@ class KlikAanKlikUitDevice(LightEntity):
         self._state = None
         self._brightness = None
         if Dimmer == type(device):
-            self._attr_supported_features = SUPPORT_BRIGHTNESS
+            self._attr_supported_color_modes = [SUPPORT_BRIGHTNESS]
         else:
             self._attr_supported_features = 0
 
@@ -183,6 +188,132 @@ class KlikAanKlikUitDevice(LightEntity):
                 'tries': self.tries,
                 'sleep': self.sleep,
                 'callable_function': self._hub.turn_off,
+                'entity': self._id
+            }
+        ).start()
+        self._state = False
+
+    def update(self) -> None:
+        pass
+
+class KlikAanKlikUitZigbeeDevice(LightEntity):
+    """Representation of a KlikAanKlikUit Zigbee device"""
+
+    def __init__(self, device: Device) -> None:
+        """Initialize a KlikAanKlikUitDevice"""
+        self._name = device.name
+        self._id = device.id
+        self._hub = device.hub
+        self._state = None
+        self._brightness = None
+        self._color_temp = None
+        if Zigbee_Lamp == type(device):
+            self._attr_supported_color_modes = [SUPPORT_BRIGHTNESS, SUPPORT_COLOR_TEMP]
+        else:
+            self._attr_supported_features = 0
+
+    @property
+    def name(self) -> str:
+        """Return the display name of this light."""
+        return self._name
+
+    @property
+    def brightness(self):
+        """Return the brightness of the light.
+
+        This method is optional. Removing it indicates to Home Assistant
+        that brightness is not supported for this light.
+        """
+        return self._brightness
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return true if light is on."""
+        return self._state
+
+    def turn_on(self, **kwargs: Any) -> None:
+        _LOGGER.info(f'Function turn_on called in thread {threading.current_thread().name}')
+        if KlikAanKlikUitThread.has_running_threads(self._id):
+            return
+
+        self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
+        self._color_temp = kwargs.get('color_temp', 313)
+        if self.is_on is None or not self.is_on:
+            KlikAanKlikUitThread(
+                action=KlikAanKlikUitAction.TURN_ON,
+                device_id=self._id,
+                target=repeat,
+                kwargs={
+                    'tries': 1,
+                    'sleep': 1,
+                    'callable_function': self._hub.zigbee_on,
+                    'entity': self._id
+                }
+            ).start()
+            KlikAanKlikUitThread(
+                action=KlikAanKlikUitAction.DIM,
+                device_id=self._id,
+                target=repeat,
+                kwargs={
+                    'tries': 1,
+                    'sleep': 1,
+                    'callable_function': self._hub.zigbee_dim,
+                    'entity': self._id,
+                    'level': self._brightness
+                }
+            ).start()
+            KlikAanKlikUitThread(
+                action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
+                device_id=self._id,
+                target=repeat,
+                kwargs={
+                    'tries': 1,
+                    'sleep': 1,
+                    'callable_function': self._hub.zigbee_color_temp,
+                    'entity': self._id,
+                    'color_temp': self._color_temp
+                }
+            ).start()
+        else:
+            KlikAanKlikUitThread(
+                action=KlikAanKlikUitAction.DIM,
+                device_id=self._id,
+                target=repeat,
+                kwargs={
+                    'tries': 1,
+                    'sleep': 1,
+                    'callable_function': self._hub.zigbee_dim,
+                    'entity': self._id,
+                    'level': self._brightness
+                }
+            ).start()
+            KlikAanKlikUitThread(
+                action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
+                device_id=self._id,
+                target=repeat,
+                kwargs={
+                    'tries': 1,
+                    'sleep': 1,
+                    'callable_function': self._hub.zigbee_color_temp,
+                    'entity': self._id,
+                    'color_temp': self._color_temp
+                }
+            ).start()
+        self._state = True
+
+    def turn_off(self, **kwargs: Any) -> None:
+        _LOGGER.info(f'Function turn_off called in thread {threading.current_thread().name}')
+        if KlikAanKlikUitThread.has_running_threads(self._id):
+            return
+
+        KlikAanKlikUitThread(
+            action=KlikAanKlikUitAction.TURN_OFF,
+            device_id=self._id,
+            target=repeat,
+            kwargs={
+                'tries': 1,
+                'sleep': 1,
+                'callable_function': self._hub.zigbee_off,
                 'entity': self._id
             }
         ).start()

@@ -16,6 +16,13 @@ light:
     password: PASSWORD_HERE_OR_secrets.yaml
     tries: 3  # Optional, defaults to 3
     sleep: 2  # Optional, defaults to 3
+
+cover: # Zonnescherm / zonwering                                      
+  - platform: ics2000
+    mac: MAC_HERE
+    email: EMAIL_HERE
+    password: PASSWORD_HERE_OR_secrets.yaml
+    # Removed tries and sleep. the stop command would not work with them
 ```
 * Restart Home Assistant
 
