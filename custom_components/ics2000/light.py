@@ -14,7 +14,7 @@ from enum import Enum
 
 # Import the device class from the component that you want to support
 import homeassistant.helpers.config_validation as cv
-from homeassistant.components.light import ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, SUPPORT_COLOR_TEMP, PLATFORM_SCHEMA, LightEntity
+from homeassistant.components.light import ATTR_BRIGHTNESS, SUPPORT_BRIGHTNESS, PLATFORM_SCHEMA, LightEntity, ColorMode, ATTR_COLOR_TEMP
 from homeassistant.const import CONF_PASSWORD, CONF_MAC, CONF_EMAIL
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -211,10 +211,9 @@ class KlikAanKlikUitZigbeeDevice(LightEntity):
         self._state = None
         self._brightness = None
         self._color_temp = None
-        if Zigbee_Lamp == type(device):
-            self._attr_supported_color_modes = [SUPPORT_BRIGHTNESS, SUPPORT_COLOR_TEMP]
-        else:
-            self._attr_supported_features = 0
+        self._attr_color_mode = ColorMode.COLOR_TEMP
+        self._attr_supported_color_modes = [ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP]
+        # self._attr_supported_features = 0
 
     @property
     def name(self) -> str:
@@ -241,7 +240,7 @@ class KlikAanKlikUitZigbeeDevice(LightEntity):
             return
 
         self._brightness = kwargs.get(ATTR_BRIGHTNESS, None)
-        self._color_temp = kwargs.get('color_temp', None)
+        self._color_temp = kwargs.get(ATTR_COLOR_TEMP, None)
         if self.is_on is None or not self.is_on:
             KlikAanKlikUitThread(
                 action=KlikAanKlikUitAction.TURN_ON,
