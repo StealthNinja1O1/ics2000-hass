@@ -74,6 +74,10 @@ def setup_platform(
         device=device
     ) for device in hub.devices if Zigbee_Lamp == type(device))
 
+    print(f"Added {len(hub.devices)} devices to Home Assistant")
+    zigbeeDevices = [device for device in hub.devices if Zigbee_Lamp == type(device)]
+    print(f"Added {len(zigbeeDevices)} Zigbee devices to Home Assistant")
+
 
 class KlikAanKlikUitAction(Enum):
     TURN_ON = 'on'
@@ -236,8 +240,8 @@ class KlikAanKlikUitZigbeeDevice(LightEntity):
         if KlikAanKlikUitThread.has_running_threads(self._id):
             return
 
-        self._brightness = kwargs.get(ATTR_BRIGHTNESS, 255)
-        self._color_temp = kwargs.get('color_temp', 313)
+        self._brightness = kwargs.get(ATTR_BRIGHTNESS, None)
+        self._color_temp = kwargs.get('color_temp', None)
         if self.is_on is None or not self.is_on:
             KlikAanKlikUitThread(
                 action=KlikAanKlikUitAction.TURN_ON,
@@ -250,55 +254,59 @@ class KlikAanKlikUitZigbeeDevice(LightEntity):
                     'entity': self._id
                 }
             ).start()
-            KlikAanKlikUitThread(
-                action=KlikAanKlikUitAction.DIM,
-                device_id=self._id,
-                target=repeat,
-                kwargs={
-                    'tries': 1,
-                    'sleep': 1,
-                    'callable_function': self._hub.zigbee_dim,
-                    'entity': self._id,
-                    'level': self._brightness
-                }
-            ).start()
-            KlikAanKlikUitThread(
-                action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
-                device_id=self._id,
-                target=repeat,
-                kwargs={
-                    'tries': 1,
-                    'sleep': 1,
-                    'callable_function': self._hub.zigbee_color_temp,
-                    'entity': self._id,
-                    'color_temp': self._color_temp
-                }
-            ).start()
+            if self._brightness is not None:
+                KlikAanKlikUitThread(
+                    action=KlikAanKlikUitAction.DIM,
+                    device_id=self._id,
+                    target=repeat,
+                    kwargs={
+                        'tries': 1,
+                        'sleep': 1,
+                        'callable_function': self._hub.zigbee_dim,
+                        'entity': self._id,
+                        'level': self._brightness
+                    }
+                ).start()
+            if self._color_temp is not None:
+                KlikAanKlikUitThread(
+                    action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
+                    device_id=self._id,
+                    target=repeat,
+                    kwargs={
+                        'tries': 1,
+                        'sleep': 1,
+                        'callable_function': self._hub.zigbee_color_temp,
+                        'entity': self._id,
+                        'color_temp': self._color_temp
+                    }
+                ).start()
         else:
-            KlikAanKlikUitThread(
-                action=KlikAanKlikUitAction.DIM,
-                device_id=self._id,
-                target=repeat,
-                kwargs={
-                    'tries': 1,
-                    'sleep': 1,
-                    'callable_function': self._hub.zigbee_dim,
-                    'entity': self._id,
-                    'level': self._brightness
-                }
-            ).start()
-            KlikAanKlikUitThread(
-                action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
-                device_id=self._id,
-                target=repeat,
-                kwargs={
-                    'tries': 1,
-                    'sleep': 1,
-                    'callable_function': self._hub.zigbee_color_temp,
-                    'entity': self._id,
-                    'color_temp': self._color_temp
-                }
-            ).start()
+            if self._brightness is not None:
+                KlikAanKlikUitThread(
+                    action=KlikAanKlikUitAction.DIM,
+                    device_id=self._id,
+                    target=repeat,
+                    kwargs={
+                        'tries': 1,
+                        'sleep': 1,
+                        'callable_function': self._hub.zigbee_dim,
+                        'entity': self._id,
+                        'level': self._brightness
+                    }
+                ).start()
+            if self._color_temp is not None:
+                KlikAanKlikUitThread(
+                    action=KlikAanKlikUitAction.CHANGE_TEMEPRATURE,
+                    device_id=self._id,
+                    target=repeat,
+                    kwargs={
+                        'tries': 1,
+                        'sleep': 1,
+                        'callable_function': self._hub.zigbee_color_temp,
+                        'entity': self._id,
+                        'color_temp': self._color_temp
+                    }
+                ).start()
         self._state = True
 
     def turn_off(self, **kwargs: Any) -> None:
